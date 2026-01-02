@@ -3,147 +3,428 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CredForge | Secure Credential Architect</title>
-    <link rel="stylesheet" href="./css/index.css">
-    <link rel="icon" type="image/png" href="./Assets/logo.png">
-    <script src="./js/index.js"></script>
+    <title>CredForge | Multi-Gen Security</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono&display=swap');
+
+        :root {
+            --bg-dark: #0a0a0a;
+            --card-bg: #141414;
+            --brand-teal: #008080;
+            --brand-teal-glow: rgba(0, 128, 128, 0.3);
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: #e0e0e0;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden; /* Main window scroll handled by containers */
+        }
+
+        .mono { font-family: 'JetBrains Mono', monospace; }
+
+        /* Custom Scrollbar */
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { 
+            background: #333; 
+            border-radius: 10px; 
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: var(--brand-teal); }
+
+        .nav-link.active {
+            color: var(--brand-teal);
+            border-right: 3px solid var(--brand-teal);
+            background: linear-gradient(to right, transparent, rgba(0, 128, 128, 0.05));
+        }
+
+        .input-focus:focus {
+            outline: none;
+            border-color: var(--brand-teal);
+            box-shadow: 0 0 10px var(--brand-teal-glow);
+        }
+
+        .validation-msg {
+            font-size: 0.7rem;
+            color: #ff4d4d;
+            margin-top: 4px;
+            min-height: 1rem;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .validation-msg.show { opacity: 1; }
+
+        .fade-enter {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .success-toast {
+            animation: slideUp 0.4s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4">
+<body class="h-screen flex">
 
-    <div id="app" class="max-w-2xl w-full">
-        <!-- Header -->
-        <header class="mb-8 text-center">
-            <h1 class="text-4xl font-bold tracking-tighter mb-2">CRED<span class="text-[#008080]">FORGE</span></h1>
-            <p class="text-gray-400 text-sm">High-Entropy Single-Page Credential Architect</p>
-        </header>
-
-        <!-- Generation Form -->
-        <div id="setup-form" class="space-y-6">
-            
-            <!-- Step 1: Type -->
-            <div class="step-card p-6 rounded-xl">
-                <label class="block text-xs font-semibold uppercase tracking-widest text-teal-500 mb-4">1. Select Credential Type</label>
-                <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    <button type="button" onclick="selectType('pin')" class="type-btn p-3 border border-gray-700 rounded-lg text-sm hover:border-teal-500 transition-colors" data-type="pin">PIN</button>
-                    <button type="button" onclick="selectType('password')" class="type-btn p-3 border border-gray-700 rounded-lg text-sm hover:border-teal-500 transition-colors border-teal-500 bg-teal-900/20" data-type="password">Password</button>
-                    <button type="button" onclick="selectType('passphrase')" class="type-btn p-3 border border-gray-700 rounded-lg text-sm hover:border-teal-500 transition-colors" data-type="passphrase">Passphrase</button>
-                    <button type="button" onclick="selectType('token')" class="type-btn p-3 border border-gray-700 rounded-lg text-sm hover:border-teal-500 transition-colors" data-type="token">API Token</button>
-                </div>
-            </div>
-
-            <!-- Step 2: Length -->
-            <div class="step-card p-6 rounded-xl">
-                <label class="block text-xs font-semibold uppercase tracking-widest text-teal-500 mb-4">2. Choose Length</label>
-                <div class="flex flex-wrap gap-2 mb-4">
-                    <button type="button" onclick="setLength(8)" class="len-btn px-4 py-2 border border-gray-700 rounded-md text-sm hover:bg-gray-800">8</button>
-                    <button type="button" onclick="setLength(12)" class="len-btn px-4 py-2 border border-gray-700 rounded-md text-sm hover:bg-gray-800 bg-gray-800">12</button>
-                    <button type="button" onclick="setLength(16)" class="len-btn px-4 py-2 border border-gray-700 rounded-md text-sm hover:bg-gray-800">16</button>
-                    <button type="button" onclick="setLength(32)" class="len-btn px-4 py-2 border border-gray-700 rounded-md text-sm hover:bg-gray-800">32</button>
-                </div>
-                <input type="number" id="custom-length" placeholder="Custom length (4-128)" 
-                       class="w-full bg-transparent border-b border-gray-700 py-2 focus:outline-none focus:border-teal-500 mono text-lg">
-                <div id="length-validation" class="validation-msg">Length must be between 4 and 128 characters.</div>
-            </div>
-
-            <!-- Step 3: Character Sets -->
-            <div class="step-card p-6 rounded-xl">
-                <label class="block text-xs font-semibold uppercase tracking-widest text-teal-500 mb-4">3. Character Composition</label>
-                <div class="space-y-3">
-                    <label class="flex items-center space-x-3 cursor-pointer">
-                        <input type="checkbox" id="check-upper" checked class="custom-checkbox w-4 h-4 rounded border-gray-700 bg-transparent text-teal-500 focus:ring-teal-500">
-                        <span class="text-sm">Uppercase Letters (A-Z)</span>
-                    </label>
-                    <label class="flex items-center space-x-3 cursor-pointer">
-                        <input type="checkbox" id="check-lower" checked class="custom-checkbox w-4 h-4 rounded border-gray-700 bg-transparent text-teal-500 focus:ring-teal-500">
-                        <span class="text-sm">Lowercase Letters (a-z)</span>
-                    </label>
-                    <label class="flex items-center space-x-3 cursor-pointer">
-                        <input type="checkbox" id="check-numbers" checked class="custom-checkbox w-4 h-4 rounded border-gray-700 bg-transparent text-teal-500 focus:ring-teal-500">
-                        <span class="text-sm">Numbers (0-9)</span>
-                    </label>
-                    <label class="flex items-center space-x-3 cursor-pointer">
-                        <input type="checkbox" id="check-symbols" checked class="custom-checkbox w-4 h-4 rounded border-gray-700 bg-transparent text-teal-500 focus:ring-teal-500">
-                        <span class="text-sm">Symbols (!@#$%^&*)</span>
-                    </label>
-                    <div class="pt-2">
-                        <input type="text" id="custom-symbols" placeholder="Add custom symbols..." 
-                               class="w-full bg-transparent border-b border-gray-700 py-1 text-sm focus:outline-none focus:border-teal-500">
-                    </div>
-                </div>
-                <div id="charset-validation" class="validation-msg">Select at least one character set.</div>
-            </div>
-
-            <!-- Step 4: Formatting -->
-            <div class="step-card p-6 rounded-xl">
-                <label class="block text-xs font-semibold uppercase tracking-widest text-teal-500 mb-4">4. Output Format</label>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <label class="flex items-center space-x-3 p-3 border border-gray-800 rounded-lg cursor-pointer hover:bg-white/5">
-                        <input type="radio" name="format" value="random" checked class="text-teal-500">
-                        <span class="text-sm">Fully Random</span>
-                    </label>
-                    <label class="flex items-center space-x-3 p-3 border border-gray-800 rounded-lg cursor-pointer hover:bg-white/5">
-                        <input type="radio" name="format" value="grouped" class="text-teal-500">
-                        <span class="text-sm">Grouped (xxxx-xxxx)</span>
-                    </label>
-                    <label class="flex items-center space-x-3 p-3 border border-gray-800 rounded-lg cursor-pointer hover:bg-white/5">
-                        <input type="radio" name="format" value="ambig" class="text-teal-500">
-                        <span class="text-sm">No Ambiguous (0/O, 1/l)</span>
-                    </label>
-                </div>
-            </div>
-
-            <!-- Step 5: Label/Seed -->
-            <div class="step-card p-6 rounded-xl">
-                <label class="block text-xs font-semibold uppercase tracking-widest text-teal-500 mb-4">5. Optional Context / Seed</label>
-                <input type="text" id="seed-input" placeholder="e.g. gmail, work-token, nickname" 
-                       class="w-full bg-transparent border-b border-gray-700 py-2 focus:outline-none focus:border-teal-500 mb-4">
-                <label class="flex items-center space-x-3 cursor-pointer">
-                    <input type="checkbox" id="check-deterministic" class="custom-checkbox w-4 h-4 rounded border-gray-700 bg-transparent text-teal-500 focus:ring-teal-500">
-                    <span class="text-sm text-gray-400">Enable Deterministic Generation (same seed = same output)</span>
-                </label>
-            </div>
-
-            <!-- Step 6: Action -->
-            <div class="pb-12">
-                <button onclick="handleGenerate()" 
-                        class="w-full bg-[#008080] hover:bg-[#00AEAE] text-white font-bold py-4 rounded-xl transition-all transform active:scale-95 shadow-lg shadow-teal-900/20">
-                    GENERATE SECURELY
-                </button>
-            </div>
+    <!-- Sidebar Navigation -->
+    <nav class="w-64 border-r border-white/10 flex flex-col p-6 space-y-8 bg-black">
+        <div class="mb-4">
+            <h1 class="text-2xl font-bold tracking-tighter text-white">CRED<span class="text-[#008080]">FORGE</span></h1>
+            <p class="text-[10px] uppercase tracking-widest text-gray-500">v2.0 Security Suite</p>
         </div>
 
-        <!-- Result Section -->
-        <div id="result-screen" class="hidden-section animate-fade">
-            <div class="success-banner p-4 rounded-lg mb-6 flex items-center space-x-3">
-                <svg class="w-5 h-5 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                <span class="text-sm text-teal-100 font-medium">Generation Complete & Verified</span>
+        <div class="flex flex-col space-y-2">
+            <button onclick="switchTab('entropy')" id="nav-entropy" class="nav-link active text-left py-3 px-4 text-sm font-semibold transition-all hover:text-white">
+                Entropy Forge
+                <span class="block text-[10px] font-normal text-gray-500">Pure Randomness</span>
+            </button>
+            <button onclick="switchTab('identity')" id="nav-identity" class="nav-link text-left py-3 px-4 text-sm font-semibold transition-all hover:text-white">
+                Identity Forge
+                <span class="block text-[10px] font-normal text-gray-500">Mnemonic/Personal</span>
+            </button>
+        </div>
+
+        <div class="mt-auto pt-6 border-t border-white/5">
+            <div class="text-[10px] text-gray-600">ENCRYPTION MODE</div>
+            <div class="text-xs text-teal-600 font-mono">AES-SHA256-CLIENT</div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex overflow-hidden">
+        
+        <!-- Left: Configuration (Scrollable) -->
+        <section class="w-1/2 p-10 overflow-y-auto custom-scroll border-r border-white/5 bg-[#0d0d0d]">
+            
+            <!-- SECTION: ENTROPY FORGE -->
+            <div id="pane-entropy" class="tab-pane fade-enter">
+                <h2 class="text-3xl font-bold mb-2">Entropy Forge</h2>
+                <p class="text-gray-500 text-sm mb-8">Generate high-security random credentials.</p>
+
+                <div class="space-y-8">
+                    <!-- Step 1: Type -->
+                    <div>
+                        <label class="text-[10px] uppercase tracking-widest text-teal-500 font-bold">Credential Type</label>
+                        <div class="grid grid-cols-2 gap-2 mt-3">
+                            <button onclick="setType('password')" class="type-btn p-3 bg-white/5 border border-white/10 rounded-lg text-xs hover:border-teal-500 active-type" id="type-password">Password</button>
+                            <button onclick="setType('pin')" class="type-btn p-3 bg-white/5 border border-white/10 rounded-lg text-xs hover:border-teal-500" id="type-pin">PIN</button>
+                            <button onclick="setType('passphrase')" class="type-btn p-3 bg-white/5 border border-white/10 rounded-lg text-xs hover:border-teal-500" id="type-passphrase">Passphrase</button>
+                            <button onclick="setType('token')" class="type-btn p-3 bg-white/5 border border-white/10 rounded-lg text-xs hover:border-teal-500" id="type-token">API Token</button>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Length -->
+                    <div>
+                        <label class="text-[10px] uppercase tracking-widest text-teal-500 font-bold">Character Length</label>
+                        <input type="number" id="length-input" value="16" min="4" max="128" 
+                               class="w-full mt-3 bg-transparent border-b border-white/20 py-3 text-2xl mono input-focus transition-all">
+                        <div id="v-length" class="validation-msg">Length must be between 4 and 128 characters.</div>
+                    </div>
+
+                    <!-- Step 3: Components -->
+                    <div class="space-y-4">
+                        <label class="text-[10px] uppercase tracking-widest text-teal-500 font-bold">Inclusion Rules</label>
+                        <div class="grid grid-cols-1 gap-3">
+                            <label class="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5">
+                                <span class="text-xs uppercase">A-Z Uppercase</span>
+                                <input type="checkbox" id="inc-upper" checked class="w-4 h-4 accent-teal-600">
+                            </label>
+                            <label class="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5">
+                                <span class="text-xs uppercase">a-z Lowercase</span>
+                                <input type="checkbox" id="inc-lower" checked class="w-4 h-4 accent-teal-600">
+                            </label>
+                            <label class="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5">
+                                <span class="text-xs uppercase">0-9 Numbers</span>
+                                <input type="checkbox" id="inc-nums" checked class="w-4 h-4 accent-teal-600">
+                            </label>
+                            <label class="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5">
+                                <span class="text-xs uppercase">Special Symbols</span>
+                                <input type="checkbox" id="inc-syms" checked class="w-4 h-4 accent-teal-600">
+                            </label>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="step-card p-8 rounded-2xl text-center relative overflow-hidden">
-                <div class="text-xs uppercase tracking-tighter text-gray-500 mb-2">Remember as:</div>
-                <div id="mnemonic-name" class="text-2xl font-bold text-teal-400 mb-8 italic">...</div>
+            <!-- SECTION: IDENTITY FORGE -->
+            <div id="pane-identity" class="tab-pane hidden fade-enter">
+                <h2 class="text-3xl font-bold mb-2">Identity Forge</h2>
+                <p class="text-gray-500 text-sm mb-8">Create memorable passwords using your personal data seeds.</p>
+
+                <div class="space-y-6">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-[10px] uppercase text-gray-500 font-bold">First Name</label>
+                            <input type="text" id="id-first" placeholder="John" class="w-full bg-white/5 border border-white/10 rounded p-2 mt-1 text-sm input-focus">
+                        </div>
+                        <div>
+                            <label class="text-[10px] uppercase text-gray-500 font-bold">Last Name</label>
+                            <input type="text" id="id-last" placeholder="Doe" class="w-full bg-white/5 border border-white/10 rounded p-2 mt-1 text-sm input-focus">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-[10px] uppercase text-gray-500 font-bold">Middle/Alias (Optional)</label>
+                        <input type="text" id="id-alias" placeholder="The Architect" class="w-full bg-white/5 border border-white/10 rounded p-2 mt-1 text-sm input-focus">
+                    </div>
+                    <div>
+                        <label class="text-[10px] uppercase text-gray-500 font-bold">Email</label>
+                        <input type="email" id="id-email" placeholder="hello@example.com" class="w-full bg-white/5 border border-white/10 rounded p-2 mt-1 text-sm input-focus">
+                        <div id="v-email" class="validation-msg">Please enter a valid email.</div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-[10px] uppercase text-gray-500 font-bold">Date of Birth</label>
+                            <input type="date" id="id-dob" class="w-full bg-white/5 border border-white/10 rounded p-2 mt-1 text-sm input-focus">
+                        </div>
+                        <div>
+                            <label class="text-[10px] uppercase text-gray-500 font-bold">Birth Place</label>
+                            <input type="text" id="id-place" placeholder="New York" class="w-full bg-white/5 border border-white/10 rounded p-2 mt-1 text-sm input-focus">
+                        </div>
+                    </div>
+                    <div class="p-4 bg-teal-900/10 border border-teal-500/20 rounded-lg">
+                        <p class="text-[10px] text-teal-500 leading-relaxed italic">
+                            * Note: Identity data is used locally as a hash seed. It is never transmitted.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-12">
+                <button onclick="generate()" class="w-full bg-teal-600 hover:bg-teal-500 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform active:scale-95">
+                    FORGE CREDENTIAL
+                </button>
+            </div>
+        </section>
+
+        <!-- Right: Output Area -->
+        <section class="w-1/2 p-10 flex flex-col items-center justify-center bg-black relative">
+            <div id="empty-state" class="text-center opacity-30">
+                <div class="text-6xl mb-4">⚒️</div>
+                <p class="text-sm uppercase tracking-widest font-mono">Awaiting Architect Input</p>
+            </div>
+
+            <div id="output-screen" class="hidden w-full max-w-md fade-enter">
+                <div class="text-center mb-10">
+                    <div class="text-[10px] text-gray-500 uppercase tracking-[0.3em] mb-2">Memory Anchor</div>
+                    <h3 id="mnemonic-label" class="text-2xl font-bold italic text-teal-400">Silken Whisper</h3>
+                </div>
 
                 <div class="relative group">
-                    <input type="password" id="output-field" readonly 
-                           class="w-full bg-black/40 border border-gray-700 rounded-xl p-6 text-2xl text-center mono tracking-widest focus:outline-none focus:border-teal-500 transition-all">
-                    
-                    <div class="mt-6 flex justify-center space-x-4">
-                        <button onclick="toggleVisibility()" id="toggle-btn" class="p-3 bg-gray-800 rounded-full hover:bg-gray-700 transition-colors" title="Toggle Visibility">
-                            <span id="toggle-icon">👁️</span>
+                    <div id="field-container" class="bg-white/5 border border-white/10 rounded-2xl p-8 mb-6 relative overflow-hidden group-hover:border-teal-500/50 transition-all">
+                        <input type="password" id="final-output" readonly 
+                               class="w-full bg-transparent text-center text-3xl font-mono tracking-wider focus:outline-none">
+                        
+                        <!-- Toggle Overlay -->
+                        <div id="face-toggle" onclick="toggleView()" class="absolute inset-0 bg-black flex items-center justify-center cursor-pointer transition-all opacity-0 pointer-events-none">
+                            <span id="toggle-emoji" class="text-4xl">🙈</span>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-center space-x-4">
+                        <button onclick="toggleView()" class="w-12 h-12 flex items-center justify-center bg-white/10 rounded-full hover:bg-teal-600 transition-colors">
+                            <span id="eye-icon">👁️</span>
                         </button>
-                        <button onclick="copyToClipboard()" class="p-3 bg-gray-800 rounded-full hover:bg-gray-700 transition-colors" title="Copy to Clipboard">
+                        <button onclick="copyResult()" class="w-12 h-12 flex items-center justify-center bg-white/10 rounded-full hover:bg-teal-600 transition-colors">
                             📋
                         </button>
                     </div>
                 </div>
+
+                <div id="success-msg" class="mt-8 text-center text-teal-500 text-xs font-semibold uppercase tracking-widest opacity-0">
+                    Successfully Forged and Copied!
+                </div>
             </div>
+        </section>
+    </main>
 
-            <button onclick="resetApp()" class="w-full mt-6 py-3 text-sm text-gray-500 hover:text-teal-500 transition-colors">
-                ← Start New Generation
-            </button>
-        </div>
-    </div>
+    <script>
+        let currentTab = 'entropy';
+        let currentType = 'password';
+        let isVisible = false;
 
+        const adj = ["Neon", "Void", "Silent", "Iron", "Crystal", "Wild", "Midnight", "Solar", "Azure", "Rapid"];
+        const obj = ["Falcon", "Circuit", "Echo", "Pillar", "Nova", "Nomad", "Vortex", "Cipher", "Gate", "Pulse"];
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
+            document.getElementById(`pane-${tab}`).classList.remove('hidden');
+            
+            document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+            document.getElementById(`nav-${tab}`).classList.add('active');
+            
+            resetOutput();
+        }
+
+        function setType(type) {
+            currentType = type;
+            document.querySelectorAll('.type-btn').forEach(btn => btn.classList.remove('active-type', 'border-teal-500', 'bg-teal-900/20'));
+            document.getElementById(`type-${type}`).classList.add('active-type', 'border-teal-500', 'bg-teal-900/20');
+            
+            const lenMap = { password: 16, pin: 6, passphrase: 24, token: 40 };
+            document.getElementById('length-input').value = lenMap[type];
+        }
+
+        async function hashInput(str) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(str);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint32Array(hashBuffer));
+            return hashArray;
+        }
+
+        function generate() {
+            if (!validate()) return;
+
+            if (currentTab === 'entropy') {
+                createEntropyForge();
+            } else {
+                createIdentityForge();
+            }
+        }
+
+        function validate() {
+            let pass = true;
+            // Length Validation
+            const len = parseInt(document.getElementById('length-input').value);
+            const vLen = document.getElementById('v-length');
+            if (len < 4 || len > 128) {
+                vLen.classList.add('show');
+                pass = false;
+            } else {
+                vLen.classList.remove('show');
+            }
+
+            // Identity Validation
+            if (currentTab === 'identity') {
+                const email = document.getElementById('id-email').value;
+                const vEmail = document.getElementById('v-email');
+                if (email && !email.includes('@')) {
+                    vEmail.classList.add('show');
+                    pass = false;
+                } else {
+                    vEmail.classList.remove('show');
+                }
+            }
+            return pass;
+        }
+
+        function createEntropyForge() {
+            const len = parseInt(document.getElementById('length-input').value);
+            const charset = getCharset();
+            let res = "";
+            const array = new Uint32Array(len);
+            crypto.getRandomValues(array);
+            
+            for (let i = 0; i < len; i++) {
+                res += charset[array[i] % charset.length];
+            }
+            
+            displayResult(res);
+        }
+
+        async function createIdentityForge() {
+            const data = [
+                document.getElementById('id-first').value,
+                document.getElementById('id-last').value,
+                document.getElementById('id-alias').value,
+                document.getElementById('id-email').value,
+                document.getElementById('id-dob').value,
+                document.getElementById('id-place').value
+            ].join('|');
+
+            const hash = await hashInput(data || Math.random().toString());
+            const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+            let res = "";
+            
+            // Deterministic generation based on identity hash
+            for (let i = 0; i < 24; i++) {
+                const charIndex = (hash[i % hash.length] + i) % charset.length;
+                res += charset[charIndex];
+            }
+            
+            displayResult(res);
+        }
+
+        function getCharset() {
+            let s = "";
+            if (currentType === 'pin') return "0123456789";
+            if (document.getElementById('inc-upper').checked) s += "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            if (document.getElementById('inc-lower').checked) s += "abcdefghijklmnopqrstuvwxyz";
+            if (document.getElementById('inc-nums').checked) s += "0123456789";
+            if (document.getElementById('inc-syms').checked) s += "!@#$%^&*()_+-=[]{}|;:,.<>?";
+            return s || "abcd123";
+        }
+
+        function displayResult(val) {
+            document.getElementById('empty-state').classList.add('hidden');
+            document.getElementById('output-screen').classList.remove('hidden');
+            document.getElementById('final-output').value = val;
+            
+            // Generate random memory mnemonic
+            const a = adj[Math.floor(Math.random() * adj.length)];
+            const o = obj[Math.floor(Math.random() * obj.length)];
+            document.getElementById('mnemonic-label').innerText = `${a} ${o}`;
+            
+            // Auto hide/face mode
+            isVisible = false;
+            updateView();
+        }
+
+        function toggleView() {
+            isVisible = !isVisible;
+            updateView();
+        }
+
+        function updateView() {
+            const field = document.getElementById('final-output');
+            const overlay = document.getElementById('face-toggle');
+            const eye = document.getElementById('eye-icon');
+            
+            if (isVisible) {
+                field.type = 'text';
+                overlay.style.opacity = '0';
+                overlay.style.pointerEvents = 'none';
+                eye.innerText = '👓';
+            } else {
+                field.type = 'password';
+                overlay.style.opacity = '1';
+                overlay.style.pointerEvents = 'auto';
+                eye.innerText = '👁️';
+            }
+        }
+
+        function copyResult() {
+            const field = document.getElementById('final-output');
+            const oldType = field.type;
+            field.type = 'text';
+            field.select();
+            document.execCommand('copy');
+            field.type = oldType;
+
+            const msg = document.getElementById('success-msg');
+            msg.style.opacity = '1';
+            setTimeout(() => msg.style.opacity = '0', 2000);
+        }
+
+        function resetOutput() {
+            document.getElementById('empty-state').classList.remove('hidden');
+            document.getElementById('output-screen').classList.add('hidden');
+        }
+
+        // Initialize
+        setType('password');
+    </script>
 </body>
 </html>
