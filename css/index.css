@@ -1,0 +1,67 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono&display=swap');
+
+        :root {
+            --bg-dark: #121212;
+            --text-light: #F5F5F5;
+            --brand-teal: #008080;
+            --brand-teal-hover: #00AEAE;
+            --error-red: #B22222;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .mono { font-family: 'JetBrains Mono', monospace; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-dark); }
+        ::-webkit-scrollbar-thumb { 
+            background: var(--brand-teal); 
+            border-radius: 4px; 
+        }
+        ::-webkit-scrollbar-thumb:hover { background: var(--brand-teal-hover); }
+
+        .step-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .step-card:focus-within {
+            border-color: var(--brand-teal);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .custom-checkbox:checked {
+            background-color: var(--brand-teal);
+            border-color: var(--brand-teal);
+        }
+
+        .validation-msg {
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+            color: var(--error-red);
+            height: 1rem;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .validation-msg.visible { opacity: 1; }
+        
+        .success-banner {
+            background: rgba(0, 128, 128, 0.1);
+            border: 1px solid var(--brand-teal);
+        }
+
+        .hidden-section { display: none; }
+        
+        /* Animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade { animation: fadeIn 0.4s ease forwards; }

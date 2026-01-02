@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CredForge | Secure Credential Architect</title>
+    <link rel="stylesheet" href="./css/index.css">
+    <script src="./js/index.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <div id="app" class="max-w-2xl w-full">
+        <!-- Header -->
+        <header class="mb-8 text-center">
+            <h1 class="text-4xl font-bold tracking-tighter mb-2">CRED<span class="text-[#008080]">FORGE</span></h1>
+            <p class="text-gray-400 text-sm">High-Entropy Single-Page Credential Architect</p>
+        </header>
+
+        <!-- Generation Form -->
+        <div id="setup-form" class="space-y-6">
+            
+            <!-- Step 1: Type -->
+            <div class="step-card p-6 rounded-xl">
+                <label class="block text-xs font-semibold uppercase tracking-widest text-teal-500 mb-4">1. Select Credential Type</label>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <button type="button" onclick="selectType('pin')" class="type-btn p-3 border border-gray-700 rounded-lg text-sm hover:border-teal-500 transition-colors" data-type="pin">PIN</button>
+                    <button type="button" onclick="selectType('password')" class="type-btn p-3 border border-gray-700 rounded-lg text-sm hover:border-teal-500 transition-colors border-teal-500 bg-teal-900/20" data-type="password">Password</button>
+                    <button type="button" onclick="selectType('passphrase')" class="type-btn p-3 border border-gray-700 rounded-lg text-sm hover:border-teal-500 transition-colors" data-type="passphrase">Passphrase</button>
+                    <button type="button" onclick="selectType('token')" class="type-btn p-3 border border-gray-700 rounded-lg text-sm hover:border-teal-500 transition-colors" data-type="token">API Token</button>
+                </div>
+            </div>
+
+            <!-- Step 2: Length -->
+            <div class="step-card p-6 rounded-xl">
+                <label class="block text-xs font-semibold uppercase tracking-widest text-teal-500 mb-4">2. Choose Length</label>
+                <div class="flex flex-wrap gap-2 mb-4">
+                    <button type="button" onclick="setLength(8)" class="len-btn px-4 py-2 border border-gray-700 rounded-md text-sm hover:bg-gray-800">8</button>
+                    <button type="button" onclick="setLength(12)" class="len-btn px-4 py-2 border border-gray-700 rounded-md text-sm hover:bg-gray-800 bg-gray-800">12</button>
+                    <button type="button" onclick="setLength(16)" class="len-btn px-4 py-2 border border-gray-700 rounded-md text-sm hover:bg-gray-800">16</button>
+                    <button type="button" onclick="setLength(32)" class="len-btn px-4 py-2 border border-gray-700 rounded-md text-sm hover:bg-gray-800">32</button>
+                </div>
+                <input type="number" id="custom-length" placeholder="Custom length (4-128)" 
+                       class="w-full bg-transparent border-b border-gray-700 py-2 focus:outline-none focus:border-teal-500 mono text-lg">
+                <div id="length-validation" class="validation-msg">Length must be between 4 and 128 characters.</div>
+            </div>
+
+            <!-- Step 3: Character Sets -->
+            <div class="step-card p-6 rounded-xl">
+                <label class="block text-xs font-semibold uppercase tracking-widest text-teal-500 mb-4">3. Character Composition</label>
+                <div class="space-y-3">
+                    <label class="flex items-center space-x-3 cursor-pointer">
+                        <input type="checkbox" id="check-upper" checked class="custom-checkbox w-4 h-4 rounded border-gray-700 bg-transparent text-teal-500 focus:ring-teal-500">
+                        <span class="text-sm">Uppercase Letters (A-Z)</span>
+                    </label>
+                    <label class="flex items-center space-x-3 cursor-pointer">
+                        <input type="checkbox" id="check-lower" checked class="custom-checkbox w-4 h-4 rounded border-gray-700 bg-transparent text-teal-500 focus:ring-teal-500">
+                        <span class="text-sm">Lowercase Letters (a-z)</span>
+                    </label>
+                    <label class="flex items-center space-x-3 cursor-pointer">
+                        <input type="checkbox" id="check-numbers" checked class="custom-checkbox w-4 h-4 rounded border-gray-700 bg-transparent text-teal-500 focus:ring-teal-500">
+                        <span class="text-sm">Numbers (0-9)</span>
+                    </label>
+                    <label class="flex items-center space-x-3 cursor-pointer">
+                        <input type="checkbox" id="check-symbols" checked class="custom-checkbox w-4 h-4 rounded border-gray-700 bg-transparent text-teal-500 focus:ring-teal-500">
+                        <span class="text-sm">Symbols (!@#$%^&*)</span>
+                    </label>
+                    <div class="pt-2">
+                        <input type="text" id="custom-symbols" placeholder="Add custom symbols..." 
+                               class="w-full bg-transparent border-b border-gray-700 py-1 text-sm focus:outline-none focus:border-teal-500">
+                    </div>
+                </div>
+                <div id="charset-validation" class="validation-msg">Select at least one character set.</div>
+            </div>
+
+            <!-- Step 4: Formatting -->
+            <div class="step-card p-6 rounded-xl">
+                <label class="block text-xs font-semibold uppercase tracking-widest text-teal-500 mb-4">4. Output Format</label>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <label class="flex items-center space-x-3 p-3 border border-gray-800 rounded-lg cursor-pointer hover:bg-white/5">
+                        <input type="radio" name="format" value="random" checked class="text-teal-500">
+                        <span class="text-sm">Fully Random</span>
+                    </label>
+                    <label class="flex items-center space-x-3 p-3 border border-gray-800 rounded-lg cursor-pointer hover:bg-white/5">
+                        <input type="radio" name="format" value="grouped" class="text-teal-500">
+                        <span class="text-sm">Grouped (xxxx-xxxx)</span>
+                    </label>
+                    <label class="flex items-center space-x-3 p-3 border border-gray-800 rounded-lg cursor-pointer hover:bg-white/5">
+                        <input type="radio" name="format" value="ambig" class="text-teal-500">
+                        <span class="text-sm">No Ambiguous (0/O, 1/l)</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Step 5: Label/Seed -->
+            <div class="step-card p-6 rounded-xl">
+                <label class="block text-xs font-semibold uppercase tracking-widest text-teal-500 mb-4">5. Optional Context / Seed</label>
+                <input type="text" id="seed-input" placeholder="e.g. gmail, work-token, nickname" 
+                       class="w-full bg-transparent border-b border-gray-700 py-2 focus:outline-none focus:border-teal-500 mb-4">
+                <label class="flex items-center space-x-3 cursor-pointer">
+                    <input type="checkbox" id="check-deterministic" class="custom-checkbox w-4 h-4 rounded border-gray-700 bg-transparent text-teal-500 focus:ring-teal-500">
+                    <span class="text-sm text-gray-400">Enable Deterministic Generation (same seed = same output)</span>
+                </label>
+            </div>
+
+            <!-- Step 6: Action -->
+            <div class="pb-12">
+                <button onclick="handleGenerate()" 
+                        class="w-full bg-[#008080] hover:bg-[#00AEAE] text-white font-bold py-4 rounded-xl transition-all transform active:scale-95 shadow-lg shadow-teal-900/20">
+                    GENERATE SECURELY
+                </button>
+            </div>
+        </div>
+
+        <!-- Result Section -->
+        <div id="result-screen" class="hidden-section animate-fade">
+            <div class="success-banner p-4 rounded-lg mb-6 flex items-center space-x-3">
+                <svg class="w-5 h-5 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span class="text-sm text-teal-100 font-medium">Generation Complete & Verified</span>
+            </div>
+
+            <div class="step-card p-8 rounded-2xl text-center relative overflow-hidden">
+                <div class="text-xs uppercase tracking-tighter text-gray-500 mb-2">Remember as:</div>
+                <div id="mnemonic-name" class="text-2xl font-bold text-teal-400 mb-8 italic">...</div>
+
+                <div class="relative group">
+                    <input type="password" id="output-field" readonly 
+                           class="w-full bg-black/40 border border-gray-700 rounded-xl p-6 text-2xl text-center mono tracking-widest focus:outline-none focus:border-teal-500 transition-all">
+                    
+                    <div class="mt-6 flex justify-center space-x-4">
+                        <button onclick="toggleVisibility()" id="toggle-btn" class="p-3 bg-gray-800 rounded-full hover:bg-gray-700 transition-colors" title="Toggle Visibility">
+                            <span id="toggle-icon">👁️</span>
+                        </button>
+                        <button onclick="copyToClipboard()" class="p-3 bg-gray-800 rounded-full hover:bg-gray-700 transition-colors" title="Copy to Clipboard">
+                            📋
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="resetApp()" class="w-full mt-6 py-3 text-sm text-gray-500 hover:text-teal-500 transition-colors">
+                ← Start New Generation
+            </button>
+        </div>
+    </div>
+
+</body>
+</html>
