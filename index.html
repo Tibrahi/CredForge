@@ -19,12 +19,11 @@
             background-color: var(--bg-dark);
             color: #e0e0e0;
             font-family: 'Inter', sans-serif;
-            overflow: hidden; /* Main window scroll handled by containers */
+            overflow: hidden;
         }
 
         .mono { font-family: 'JetBrains Mono', monospace; }
 
-        /* Custom Scrollbar */
         .custom-scroll::-webkit-scrollbar { width: 6px; }
         .custom-scroll::-webkit-scrollbar-track { background: transparent; }
         .custom-scroll::-webkit-scrollbar-thumb { 
@@ -49,7 +48,7 @@
             font-size: 0.7rem;
             color: #ff4d4d;
             margin-top: 4px;
-            min-height: 1rem;
+            min-height: 1.2rem;
             opacity: 0;
             transition: opacity 0.2s;
         }
@@ -65,13 +64,10 @@
             to { opacity: 1; transform: translateX(0); }
         }
 
-        .success-toast {
-            animation: slideUp 0.4s ease-out;
-        }
-
-        @keyframes slideUp {
-            from { transform: translateY(100%); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+        .type-btn.active-type {
+            border-color: var(--brand-teal);
+            background: rgba(0, 128, 128, 0.1);
+            color: white;
         }
     </style>
 </head>
@@ -81,7 +77,7 @@
     <nav class="w-64 border-r border-white/10 flex flex-col p-6 space-y-8 bg-black">
         <div class="mb-4">
             <h1 class="text-2xl font-bold tracking-tighter text-white">CRED<span class="text-[#008080]">FORGE</span></h1>
-            <p class="text-[10px] uppercase tracking-widest text-gray-500">v2.0 Security Suite</p>
+            <p class="text-[10px] uppercase tracking-widest text-gray-500">v2.1 Identity Suite</p>
         </div>
 
         <div class="flex flex-col space-y-2">
@@ -91,13 +87,13 @@
             </button>
             <button onclick="switchTab('identity')" id="nav-identity" class="nav-link text-left py-3 px-4 text-sm font-semibold transition-all hover:text-white">
                 Identity Forge
-                <span class="block text-[10px] font-normal text-gray-500">Mnemonic/Personal</span>
+                <span class="block text-[10px] font-normal text-gray-500">Data-Based Seed</span>
             </button>
         </div>
 
-        <div class="mt-auto pt-6 border-t border-white/5">
-            <div class="text-[10px] text-gray-600">ENCRYPTION MODE</div>
-            <div class="text-xs text-teal-600 font-mono">AES-SHA256-CLIENT</div>
+        <div class="mt-auto pt-6 border-t border-white/5 text-center">
+            <div class="text-[10px] text-gray-600 mb-2">SECURITY STATUS</div>
+            <div class="inline-block px-2 py-1 rounded bg-teal-900/20 text-[10px] text-teal-500 font-mono">ENCRYPTED LOCALLY</div>
         </div>
     </nav>
 
@@ -113,7 +109,6 @@
                 <p class="text-gray-500 text-sm mb-8">Generate high-security random credentials.</p>
 
                 <div class="space-y-8">
-                    <!-- Step 1: Type -->
                     <div>
                         <label class="text-[10px] uppercase tracking-widest text-teal-500 font-bold">Credential Type</label>
                         <div class="grid grid-cols-2 gap-2 mt-3">
@@ -124,15 +119,13 @@
                         </div>
                     </div>
 
-                    <!-- Step 2: Length -->
                     <div>
                         <label class="text-[10px] uppercase tracking-widest text-teal-500 font-bold">Character Length</label>
                         <input type="number" id="length-input" value="16" min="4" max="128" 
                                class="w-full mt-3 bg-transparent border-b border-white/20 py-3 text-2xl mono input-focus transition-all">
-                        <div id="v-length" class="validation-msg">Length must be between 4 and 128 characters.</div>
+                        <div id="v-length" class="validation-msg">Length must be between 4 and 128.</div>
                     </div>
 
-                    <!-- Step 3: Components -->
                     <div class="space-y-4">
                         <label class="text-[10px] uppercase tracking-widest text-teal-500 font-bold">Inclusion Rules</label>
                         <div class="grid grid-cols-1 gap-3">
@@ -160,9 +153,10 @@
             <!-- SECTION: IDENTITY FORGE -->
             <div id="pane-identity" class="tab-pane hidden fade-enter">
                 <h2 class="text-3xl font-bold mb-2">Identity Forge</h2>
-                <p class="text-gray-500 text-sm mb-8">Create memorable passwords using your personal data seeds.</p>
+                <p class="text-gray-500 text-sm mb-8">Transform your personal data into a deterministic secure key.</p>
 
                 <div class="space-y-6">
+                    <!-- Personal Inputs -->
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="text-[10px] uppercase text-gray-500 font-bold">First Name</label>
@@ -174,13 +168,12 @@
                         </div>
                     </div>
                     <div>
-                        <label class="text-[10px] uppercase text-gray-500 font-bold">Middle/Alias (Optional)</label>
+                        <label class="text-[10px] uppercase text-gray-500 font-bold">Middle / Alias (Optional)</label>
                         <input type="text" id="id-alias" placeholder="The Architect" class="w-full bg-white/5 border border-white/10 rounded p-2 mt-1 text-sm input-focus">
                     </div>
                     <div>
                         <label class="text-[10px] uppercase text-gray-500 font-bold">Email</label>
                         <input type="email" id="id-email" placeholder="hello@example.com" class="w-full bg-white/5 border border-white/10 rounded p-2 mt-1 text-sm input-focus">
-                        <div id="v-email" class="validation-msg">Please enter a valid email.</div>
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
@@ -192,10 +185,25 @@
                             <input type="text" id="id-place" placeholder="New York" class="w-full bg-white/5 border border-white/10 rounded p-2 mt-1 text-sm input-focus">
                         </div>
                     </div>
-                    <div class="p-4 bg-teal-900/10 border border-teal-500/20 rounded-lg">
-                        <p class="text-[10px] text-teal-500 leading-relaxed italic">
-                            * Note: Identity data is used locally as a hash seed. It is never transmitted.
-                        </p>
+
+                    <!-- Identity specific Length/Type -->
+                    <div class="pt-6 border-t border-white/10">
+                        <label class="text-[10px] uppercase tracking-widest text-teal-500 font-bold">Forge Configuration</label>
+                        
+                        <div class="mt-4">
+                            <label class="text-[10px] text-gray-500 mb-2 block">Desired Length</label>
+                            <input type="number" id="id-length-input" value="12" min="4" max="64" 
+                                   class="w-full bg-transparent border-b border-white/20 py-2 text-xl mono input-focus transition-all">
+                            <div id="v-id-length" class="validation-msg">Length must be between 4 and 64.</div>
+                        </div>
+
+                        <div class="mt-4">
+                            <label class="text-[10px] text-gray-500 mb-2 block">Output Complexity</label>
+                            <div class="flex space-x-2">
+                                <button onclick="setIdComplexity('chars')" id="id-comp-chars" class="flex-1 py-2 text-[10px] font-bold border border-teal-500/50 bg-teal-500/10 rounded hover:bg-teal-500/20">CHARACTERS</button>
+                                <button onclick="setIdComplexity('nums')" id="id-comp-nums" class="flex-1 py-2 text-[10px] font-bold border border-white/10 rounded hover:bg-white/5">NUMBERS ONLY</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -211,13 +219,13 @@
         <section class="w-1/2 p-10 flex flex-col items-center justify-center bg-black relative">
             <div id="empty-state" class="text-center opacity-30">
                 <div class="text-6xl mb-4">⚒️</div>
-                <p class="text-sm uppercase tracking-widest font-mono">Awaiting Architect Input</p>
+                <p class="text-sm uppercase tracking-widest font-mono">Awaiting Input</p>
             </div>
 
             <div id="output-screen" class="hidden w-full max-w-md fade-enter">
                 <div class="text-center mb-10">
-                    <div class="text-[10px] text-gray-500 uppercase tracking-[0.3em] mb-2">Memory Anchor</div>
-                    <h3 id="mnemonic-label" class="text-2xl font-bold italic text-teal-400">Silken Whisper</h3>
+                    <div class="text-[10px] text-gray-500 uppercase tracking-[0.3em] mb-2">Mnemonic Title</div>
+                    <h3 id="mnemonic-label" class="text-2xl font-bold italic text-teal-400">...</h3>
                 </div>
 
                 <div class="relative group">
@@ -242,7 +250,7 @@
                 </div>
 
                 <div id="success-msg" class="mt-8 text-center text-teal-500 text-xs font-semibold uppercase tracking-widest opacity-0">
-                    Successfully Forged and Copied!
+                    Successfully Copied!
                 </div>
             </div>
         </section>
@@ -251,10 +259,11 @@
     <script>
         let currentTab = 'entropy';
         let currentType = 'password';
+        let idComplexity = 'chars';
         let isVisible = false;
 
-        const adj = ["Neon", "Void", "Silent", "Iron", "Crystal", "Wild", "Midnight", "Solar", "Azure", "Rapid"];
-        const obj = ["Falcon", "Circuit", "Echo", "Pillar", "Nova", "Nomad", "Vortex", "Cipher", "Gate", "Pulse"];
+        const adj = ["Swift", "Silent", "Neon", "Hidden", "Digital", "Golden", "Iron", "Vivid", "Cosmic", "Lunar"];
+        const obj = ["Cipher", "Ghost", "Tower", "Bridge", "Nova", "Path", "Vertex", "Shield", "Core", "Drift"];
 
         function switchTab(tab) {
             currentTab = tab;
@@ -269,19 +278,34 @@
 
         function setType(type) {
             currentType = type;
-            document.querySelectorAll('.type-btn').forEach(btn => btn.classList.remove('active-type', 'border-teal-500', 'bg-teal-900/20'));
-            document.getElementById(`type-${type}`).classList.add('active-type', 'border-teal-500', 'bg-teal-900/20');
+            document.querySelectorAll('.type-btn').forEach(btn => btn.classList.remove('active-type'));
+            document.getElementById(`type-${type}`).classList.add('active-type');
             
             const lenMap = { password: 16, pin: 6, passphrase: 24, token: 40 };
             document.getElementById('length-input').value = lenMap[type];
+        }
+
+        function setIdComplexity(mode) {
+            idComplexity = mode;
+            const charBtn = document.getElementById('id-comp-chars');
+            const numBtn = document.getElementById('id-comp-nums');
+            
+            if (mode === 'chars') {
+                charBtn.classList.add('border-teal-500/50', 'bg-teal-500/10');
+                numBtn.classList.remove('border-teal-500/50', 'bg-teal-500/10');
+                numBtn.classList.add('border-white/10');
+            } else {
+                numBtn.classList.add('border-teal-500/50', 'bg-teal-500/10');
+                charBtn.classList.remove('border-teal-500/50', 'bg-teal-500/10');
+                charBtn.classList.add('border-white/10');
+            }
         }
 
         async function hashInput(str) {
             const encoder = new TextEncoder();
             const data = encoder.encode(str);
             const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-            const hashArray = Array.from(new Uint32Array(hashBuffer));
-            return hashArray;
+            return Array.from(new Uint32Array(hashBuffer));
         }
 
         function generate() {
@@ -296,27 +320,27 @@
 
         function validate() {
             let pass = true;
-            // Length Validation
-            const len = parseInt(document.getElementById('length-input').value);
-            const vLen = document.getElementById('v-length');
-            if (len < 4 || len > 128) {
-                vLen.classList.add('show');
-                pass = false;
-            } else {
-                vLen.classList.remove('show');
+            
+            // Check Entropy Length
+            if (currentTab === 'entropy') {
+                const len = parseInt(document.getElementById('length-input').value);
+                const vLen = document.getElementById('v-length');
+                if (isNaN(len) || len < 4 || len > 128) {
+                    vLen.classList.add('show');
+                    pass = false;
+                } else { vLen.classList.remove('show'); }
             }
 
-            // Identity Validation
+            // Check Identity Length
             if (currentTab === 'identity') {
-                const email = document.getElementById('id-email').value;
-                const vEmail = document.getElementById('v-email');
-                if (email && !email.includes('@')) {
-                    vEmail.classList.add('show');
+                const idLen = parseInt(document.getElementById('id-length-input').value);
+                const vIdLen = document.getElementById('v-id-length');
+                if (isNaN(idLen) || idLen < 4 || idLen > 64) {
+                    vIdLen.classList.add('show');
                     pass = false;
-                } else {
-                    vEmail.classList.remove('show');
-                }
+                } else { vIdLen.classList.remove('show'); }
             }
+
             return pass;
         }
 
@@ -330,27 +354,31 @@
             for (let i = 0; i < len; i++) {
                 res += charset[array[i] % charset.length];
             }
-            
             displayResult(res);
         }
 
         async function createIdentityForge() {
-            const data = [
+            const personalData = [
                 document.getElementById('id-first').value,
                 document.getElementById('id-last').value,
                 document.getElementById('id-alias').value,
                 document.getElementById('id-email').value,
                 document.getElementById('id-dob').value,
                 document.getElementById('id-place').value
-            ].join('|');
+            ].join('::');
 
-            const hash = await hashInput(data || Math.random().toString());
-            const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
-            let res = "";
+            const targetLen = parseInt(document.getElementById('id-length-input').value);
+            const hash = await hashInput(personalData || Math.random().toString());
             
-            // Deterministic generation based on identity hash
-            for (let i = 0; i < 24; i++) {
-                const charIndex = (hash[i % hash.length] + i) % charset.length;
+            let charset = idComplexity === 'nums' 
+                ? "0123456789" 
+                : "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+            
+            let res = "";
+            // Use hash values to pick characters deterministically
+            for (let i = 0; i < targetLen; i++) {
+                const seedValue = hash[i % hash.length];
+                const charIndex = (seedValue + i) % charset.length;
                 res += charset[charIndex];
             }
             
@@ -372,12 +400,10 @@
             document.getElementById('output-screen').classList.remove('hidden');
             document.getElementById('final-output').value = val;
             
-            // Generate random memory mnemonic
             const a = adj[Math.floor(Math.random() * adj.length)];
             const o = obj[Math.floor(Math.random() * obj.length)];
             document.getElementById('mnemonic-label').innerText = `${a} ${o}`;
             
-            // Auto hide/face mode
             isVisible = false;
             updateView();
         }
@@ -423,7 +449,7 @@
             document.getElementById('output-screen').classList.add('hidden');
         }
 
-        // Initialize
+        // Init
         setType('password');
     </script>
 </body>
