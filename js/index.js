@@ -1,19 +1,18 @@
-   let currentTab = 'entropy';
+let currentTab = 'entropy';
         let currentType = 'password';
         let idComplexity = 'chars';
         let isVisible = false;
 
-        const adj = ["Swift", "Silent", "Neon", "Hidden", "Digital", "Golden", "Iron", "Vivid", "Cosmic", "Lunar"];
-        const obj = ["Cipher", "Ghost", "Tower", "Bridge", "Nova", "Path", "Vertex", "Shield", "Core", "Drift"];
+        // Minimalist Mnemonics
+        const adj = ["Alpha", "Epsilon", "Omega", "Prime", "Void", "Solar", "Lunar", "Static", "Zenith", "Nadir"];
+        const obj = ["Cipher", "Matrix", "Vector", "Node", "Pulse", "Ghost", "Gate", "Core", "Drift", "Flux"];
 
         function switchTab(tab) {
             currentTab = tab;
             document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
             document.getElementById(`pane-${tab}`).classList.remove('hidden');
-            
             document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
             document.getElementById(`nav-${tab}`).classList.add('active');
-            
             resetOutput();
         }
 
@@ -28,107 +27,83 @@
 
         function setIdComplexity(mode) {
             idComplexity = mode;
-            const charBtn = document.getElementById('id-comp-chars');
-            const numBtn = document.getElementById('id-comp-nums');
+            const cBtn = document.getElementById('id-comp-chars');
+            const nBtn = document.getElementById('id-comp-nums');
             
-            if (mode === 'chars') {
-                charBtn.classList.add('border-teal-500/50', 'bg-teal-500/10');
-                numBtn.classList.remove('border-teal-500/50', 'bg-teal-500/10');
-                numBtn.classList.add('border-white/10');
+            if(mode === 'chars') {
+                cBtn.className = "py-4 text-[10px] font-bold border border-white bg-white text-black uppercase";
+                nBtn.className = "py-4 text-[10px] font-bold border border-white/20 text-white uppercase hover:bg-white/5";
             } else {
-                numBtn.classList.add('border-teal-500/50', 'bg-teal-500/10');
-                charBtn.classList.remove('border-teal-500/50', 'bg-teal-500/10');
-                charBtn.classList.add('border-white/10');
+                nBtn.className = "py-4 text-[10px] font-bold border border-white bg-white text-black uppercase";
+                cBtn.className = "py-4 text-[10px] font-bold border border-white/20 text-white uppercase hover:bg-white/5";
             }
         }
 
         async function hashInput(str) {
             const encoder = new TextEncoder();
             const data = encoder.encode(str);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-            return Array.from(new Uint32Array(hashBuffer));
-        }
-
-        function generate() {
-            if (!validate()) return;
-
-            if (currentTab === 'entropy') {
-                createEntropyForge();
-            } else {
-                createIdentityForge();
-            }
+            const buffer = await crypto.subtle.digest('SHA-256', data);
+            return Array.from(new Uint32Array(buffer));
         }
 
         function validate() {
             let pass = true;
-            
-            // Check Entropy Length
-            if (currentTab === 'entropy') {
-                const len = parseInt(document.getElementById('length-input').value);
-                const vLen = document.getElementById('v-length');
-                if (isNaN(len) || len < 4 || len > 128) {
-                    vLen.classList.add('show');
-                    pass = false;
-                } else { vLen.classList.remove('show'); }
-            }
+            const lenEl = currentTab === 'entropy' ? document.getElementById('length-input') : document.getElementById('id-length-input');
+            const vMsg = currentTab === 'entropy' ? document.getElementById('v-length') : document.getElementById('v-id-length');
+            const len = parseInt(lenEl.value);
 
-            // Check Identity Length
+            if (isNaN(len) || len < 4 || len > 256) {
+                vMsg.classList.add('show');
+                pass = false;
+            } else { vMsg.classList.remove('show'); }
+
             if (currentTab === 'identity') {
-                const idLen = parseInt(document.getElementById('id-length-input').value);
-                const vIdLen = document.getElementById('v-id-length');
-                if (isNaN(idLen) || idLen < 4 || idLen > 64) {
-                    vIdLen.classList.add('show');
+                const email = document.getElementById('id-email').value;
+                const vEmail = document.getElementById('v-email');
+                if (email && !email.includes('@')) {
+                    vEmail.classList.add('show');
                     pass = false;
-                } else { vIdLen.classList.remove('show'); }
+                } else { vEmail.classList.remove('show'); }
             }
-
             return pass;
         }
 
-        function createEntropyForge() {
-            const len = parseInt(document.getElementById('length-input').value);
-            const charset = getCharset();
-            let res = "";
-            const array = new Uint32Array(len);
-            crypto.getRandomValues(array);
-            
-            for (let i = 0; i < len; i++) {
-                res += charset[array[i] % charset.length];
-            }
-            displayResult(res);
-        }
+        async function generate() {
+            if (!validate()) return;
 
-        async function createIdentityForge() {
-            const personalData = [
-                document.getElementById('id-first').value,
-                document.getElementById('id-last').value,
-                document.getElementById('id-alias').value,
-                document.getElementById('id-email').value,
-                document.getElementById('id-dob').value,
-                document.getElementById('id-place').value
-            ].join('::');
+            let result = "";
+            const length = parseInt(currentTab === 'entropy' ? document.getElementById('length-input').value : document.getElementById('id-length-input').value);
 
-            const targetLen = parseInt(document.getElementById('id-length-input').value);
-            const hash = await hashInput(personalData || Math.random().toString());
-            
-            let charset = idComplexity === 'nums' 
-                ? "0123456789" 
-                : "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
-            
-            let res = "";
-            // Use hash values to pick characters deterministically
-            for (let i = 0; i < targetLen; i++) {
-                const seedValue = hash[i % hash.length];
-                const charIndex = (seedValue + i) % charset.length;
-                res += charset[charIndex];
+            if (currentTab === 'entropy') {
+                const charset = getCharset();
+                const randomValues = new Uint32Array(length);
+                crypto.getRandomValues(randomValues);
+                for(let i=0; i<length; i++) result += charset[randomValues[i] % charset.length];
+            } else {
+                const personal = [
+                    document.getElementById('id-first').value,
+                    document.getElementById('id-last').value,
+                    document.getElementById('id-alias').value,
+                    document.getElementById('id-email').value,
+                    document.getElementById('id-dob').value,
+                    document.getElementById('id-place').value
+                ].join('::');
+                
+                const hash = await hashInput(personal || Math.random().toString());
+                const charset = idComplexity === 'nums' ? "0123456789" : "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+                
+                for(let i=0; i<length; i++) {
+                    const seed = hash[i % hash.length];
+                    result += charset[(seed + i) % charset.length];
+                }
             }
-            
-            displayResult(res);
+
+            displayResult(result);
         }
 
         function getCharset() {
-            let s = "";
             if (currentType === 'pin') return "0123456789";
+            let s = "";
             if (document.getElementById('inc-upper').checked) s += "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
             if (document.getElementById('inc-lower').checked) s += "abcdefghijklmnopqrstuvwxyz";
             if (document.getElementById('inc-nums').checked) s += "0123456789";
@@ -168,7 +143,7 @@
                 field.type = 'password';
                 overlay.style.opacity = '1';
                 overlay.style.pointerEvents = 'auto';
-                eye.innerText = '👁️';
+                eye.innerText = '👁';
             }
         }
 
@@ -190,5 +165,5 @@
             document.getElementById('output-screen').classList.add('hidden');
         }
 
-        // Init
+        // Initialize default
         setType('password');
