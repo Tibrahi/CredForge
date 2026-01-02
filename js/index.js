@@ -1,204 +1,194 @@
-    // State Management
-        let appState = {
-            type: 'password',
-            length: 12,
-            deterministic: false,
-            visible: false,
-            iconSet: 'eye' // Default to eye icon toggle
-        };
+   let currentTab = 'entropy';
+        let currentType = 'password';
+        let idComplexity = 'chars';
+        let isVisible = false;
 
-        const adjectives = ["Silent", "Ethereal", "Crimson", "Vibrant", "Ancient", "Hidden", "Swift", "Icy", "Golden", "Midnight", "Cosmic", "Neon", "Shadow", "Wandering"];
-        const nouns = ["Penguin", "Galaxy", "Tiger", "Waterfall", "Shadow", "Resonance", "Citadel", "Nomad", "Nebula", "Falcon", "Ghost", "Glacier", "Echo", "Void"];
+        const adj = ["Swift", "Silent", "Neon", "Hidden", "Digital", "Golden", "Iron", "Vivid", "Cosmic", "Lunar"];
+        const obj = ["Cipher", "Ghost", "Tower", "Bridge", "Nova", "Path", "Vertex", "Shield", "Core", "Drift"];
 
-        function selectType(type) {
-            appState.type = type;
-            document.querySelectorAll('.type-btn').forEach(btn => {
-                btn.classList.remove('border-teal-500', 'bg-teal-900/20');
-                if(btn.dataset.type === type) btn.classList.add('border-teal-500', 'bg-teal-900/20');
-            });
-
-            // Adjust default length based on type
-            const defaults = { pin: 6, password: 12, passphrase: 24, token: 32 };
-            setLength(defaults[type]);
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
+            document.getElementById(`pane-${tab}`).classList.remove('hidden');
             
-            // Adjust checkboxes
-            document.getElementById('check-numbers').checked = true;
-            document.getElementById('check-upper').checked = (type !== 'pin');
-            document.getElementById('check-lower').checked = (type !== 'pin');
-            document.getElementById('check-symbols').checked = (type === 'password' || type === 'token');
+            document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+            document.getElementById(`nav-${tab}`).classList.add('active');
+            
+            resetOutput();
         }
 
-        function setLength(l) {
-            appState.length = l;
-            document.getElementById('custom-length').value = l;
-            document.querySelectorAll('.len-btn').forEach(btn => {
-                btn.classList.toggle('bg-gray-800', parseInt(btn.innerText) === l);
-            });
+        function setType(type) {
+            currentType = type;
+            document.querySelectorAll('.type-btn').forEach(btn => btn.classList.remove('active-type'));
+            document.getElementById(`type-${type}`).classList.add('active-type');
+            
+            const lenMap = { password: 16, pin: 6, passphrase: 24, token: 40 };
+            document.getElementById('length-input').value = lenMap[type];
         }
 
-        // Cryptographic Functions
-        async function getHash(input) {
+        function setIdComplexity(mode) {
+            idComplexity = mode;
+            const charBtn = document.getElementById('id-comp-chars');
+            const numBtn = document.getElementById('id-comp-nums');
+            
+            if (mode === 'chars') {
+                charBtn.classList.add('border-teal-500/50', 'bg-teal-500/10');
+                numBtn.classList.remove('border-teal-500/50', 'bg-teal-500/10');
+                numBtn.classList.add('border-white/10');
+            } else {
+                numBtn.classList.add('border-teal-500/50', 'bg-teal-500/10');
+                charBtn.classList.remove('border-teal-500/50', 'bg-teal-500/10');
+                charBtn.classList.add('border-white/10');
+            }
+        }
+
+        async function hashInput(str) {
             const encoder = new TextEncoder();
-            const data = encoder.encode(input);
+            const data = encoder.encode(str);
             const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-            return new Uint32Array(hashBuffer);
+            return Array.from(new Uint32Array(hashBuffer));
         }
 
-        function mulberry32(a) {
-            return function() {
-                let t = a += 0x6D2B79F5;
-                t = Math.imul(t ^ t >>> 15, t | 1);
-                t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-                return ((t ^ t >>> 14) >>> 0) / 4294967296;
-            }
-        }
+        function generate() {
+            if (!validate()) return;
 
-        function validateInputs() {
-            let isValid = true;
-            const customLen = parseInt(document.getElementById('custom-length').value);
-            const lenVal = document.getElementById('length-validation');
-            const charsetVal = document.getElementById('charset-validation');
-
-            if (isNaN(customLen) || customLen < 4 || customLen > 128) {
-                lenVal.classList.add('visible');
-                isValid = false;
+            if (currentTab === 'entropy') {
+                createEntropyForge();
             } else {
-                lenVal.classList.remove('visible');
-                appState.length = customLen;
+                createIdentityForge();
             }
-
-            const anyChecked = document.getElementById('check-upper').checked || 
-                               document.getElementById('check-lower').checked || 
-                               document.getElementById('check-numbers').checked || 
-                               document.getElementById('check-symbols').checked ||
-                               document.getElementById('custom-symbols').value.length > 0;
-
-            if (!anyChecked) {
-                charsetVal.classList.add('visible');
-                isValid = false;
-            } else {
-                charsetVal.classList.remove('visible');
-            }
-
-            return isValid;
         }
 
-        async function handleGenerate() {
-            if (!validateInputs()) return;
-
-            const seed = document.getElementById('seed-input').value;
-            const deterministic = document.getElementById('check-deterministic').checked;
-            const charset = buildCharset();
+        function validate() {
+            let pass = true;
             
-            let result = "";
-            let randomSource;
+            // Check Entropy Length
+            if (currentTab === 'entropy') {
+                const len = parseInt(document.getElementById('length-input').value);
+                const vLen = document.getElementById('v-length');
+                if (isNaN(len) || len < 4 || len > 128) {
+                    vLen.classList.add('show');
+                    pass = false;
+                } else { vLen.classList.remove('show'); }
+            }
 
-            if (deterministic && seed) {
-                const hash = await getHash(seed);
-                randomSource = mulberry32(hash[0]);
-                
-                // Mnemonic Name
-                const adjIdx = hash[1] % adjectives.length;
-                const nounIdx = hash[2] % nouns.length;
-                document.getElementById('mnemonic-name').innerText = `${adjectives[adjIdx]} ${nouns[nounIdx]}`;
+            // Check Identity Length
+            if (currentTab === 'identity') {
+                const idLen = parseInt(document.getElementById('id-length-input').value);
+                const vIdLen = document.getElementById('v-id-length');
+                if (isNaN(idLen) || idLen < 4 || idLen > 64) {
+                    vIdLen.classList.add('show');
+                    pass = false;
+                } else { vIdLen.classList.remove('show'); }
+            }
+
+            return pass;
+        }
+
+        function createEntropyForge() {
+            const len = parseInt(document.getElementById('length-input').value);
+            const charset = getCharset();
+            let res = "";
+            const array = new Uint32Array(len);
+            crypto.getRandomValues(array);
+            
+            for (let i = 0; i < len; i++) {
+                res += charset[array[i] % charset.length];
+            }
+            displayResult(res);
+        }
+
+        async function createIdentityForge() {
+            const personalData = [
+                document.getElementById('id-first').value,
+                document.getElementById('id-last').value,
+                document.getElementById('id-alias').value,
+                document.getElementById('id-email').value,
+                document.getElementById('id-dob').value,
+                document.getElementById('id-place').value
+            ].join('::');
+
+            const targetLen = parseInt(document.getElementById('id-length-input').value);
+            const hash = await hashInput(personalData || Math.random().toString());
+            
+            let charset = idComplexity === 'nums' 
+                ? "0123456789" 
+                : "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+            
+            let res = "";
+            // Use hash values to pick characters deterministically
+            for (let i = 0; i < targetLen; i++) {
+                const seedValue = hash[i % hash.length];
+                const charIndex = (seedValue + i) % charset.length;
+                res += charset[charIndex];
+            }
+            
+            displayResult(res);
+        }
+
+        function getCharset() {
+            let s = "";
+            if (currentType === 'pin') return "0123456789";
+            if (document.getElementById('inc-upper').checked) s += "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            if (document.getElementById('inc-lower').checked) s += "abcdefghijklmnopqrstuvwxyz";
+            if (document.getElementById('inc-nums').checked) s += "0123456789";
+            if (document.getElementById('inc-syms').checked) s += "!@#$%^&*()_+-=[]{}|;:,.<>?";
+            return s || "abcd123";
+        }
+
+        function displayResult(val) {
+            document.getElementById('empty-state').classList.add('hidden');
+            document.getElementById('output-screen').classList.remove('hidden');
+            document.getElementById('final-output').value = val;
+            
+            const a = adj[Math.floor(Math.random() * adj.length)];
+            const o = obj[Math.floor(Math.random() * obj.length)];
+            document.getElementById('mnemonic-label').innerText = `${a} ${o}`;
+            
+            isVisible = false;
+            updateView();
+        }
+
+        function toggleView() {
+            isVisible = !isVisible;
+            updateView();
+        }
+
+        function updateView() {
+            const field = document.getElementById('final-output');
+            const overlay = document.getElementById('face-toggle');
+            const eye = document.getElementById('eye-icon');
+            
+            if (isVisible) {
+                field.type = 'text';
+                overlay.style.opacity = '0';
+                overlay.style.pointerEvents = 'none';
+                eye.innerText = '👓';
             } else {
-                randomSource = () => crypto.getRandomValues(new Uint32Array(1))[0] / 4294967296;
-                // Random Mnemonic
-                const randomAdj = adjectives[Math.floor(Math.random() * adjectives.length)];
-                const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
-                document.getElementById('mnemonic-name').innerText = `${randomAdj} ${randomNoun}`;
-            }
-
-            // Core Generation
-            for (let i = 0; i < appState.length; i++) {
-                result += charset[Math.floor(randomSource() * charset.length)];
-            }
-
-            // Formatting
-            const format = document.querySelector('input[name="format"]:checked').value;
-            if (format === 'grouped' && appState.length >= 8) {
-                result = result.match(/.{1,4}/g).join('-');
-            }
-
-            document.getElementById('output-field').value = result;
-            showResults();
-        }
-
-        function buildCharset() {
-            let set = "";
-            const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-            const lower = "abcdefghijklmnopqrstuvwxyz";
-            const nums = "0123456789";
-            const syms = "!@#$%^&*";
-            const ambig = "0O1lI";
-
-            if (document.getElementById('check-upper').checked) set += upper;
-            if (document.getElementById('check-lower').checked) set += lower;
-            if (document.getElementById('check-numbers').checked) set += nums;
-            if (document.getElementById('check-symbols').checked) set += syms;
-            set += document.getElementById('custom-symbols').value;
-
-            const format = document.querySelector('input[name="format"]:checked').value;
-            if (format === 'ambig') {
-                for (let char of ambig) {
-                    set = set.split(char).join('');
-                }
-            }
-            return set;
-        }
-
-        function showResults() {
-            document.getElementById('setup-form').classList.add('hidden-section');
-            document.getElementById('result-screen').classList.remove('hidden-section');
-            appState.visible = false;
-            document.getElementById('output-field').type = 'password';
-            updateToggleIcon();
-        }
-
-        function resetApp() {
-            document.getElementById('setup-form').classList.remove('hidden-section');
-            document.getElementById('result-screen').classList.add('hidden-section');
-        }
-
-        function toggleVisibility() {
-            appState.visible = !appState.visible;
-            const field = document.getElementById('output-field');
-            field.type = appState.visible ? 'text' : 'password';
-            updateToggleIcon();
-        }
-
-        function updateToggleIcon() {
-            const icon = document.getElementById('toggle-icon');
-            // User can "choose" icon style by preference, defaulting to Eye for clarity 
-            // but we can cycle icons for fun as an "easter egg" or setting
-            if (appState.visible) {
-                icon.innerText = appState.iconSet === 'eye' ? '👁️' : '😎';
-            } else {
-                icon.innerText = appState.iconSet === 'eye' ? '🙈' : '😶';
+                field.type = 'password';
+                overlay.style.opacity = '1';
+                overlay.style.pointerEvents = 'auto';
+                eye.innerText = '👁️';
             }
         }
 
-        function copyToClipboard() {
-            const field = document.getElementById('output-field');
-            const originalType = field.type;
+        function copyResult() {
+            const field = document.getElementById('final-output');
+            const oldType = field.type;
             field.type = 'text';
             field.select();
             document.execCommand('copy');
-            field.type = originalType;
-            
-            const btn = event.currentTarget;
-            const originalText = btn.innerText;
-            btn.innerText = '✅';
-            setTimeout(() => btn.innerText = '📋', 1500);
+            field.type = oldType;
+
+            const msg = document.getElementById('success-msg');
+            msg.style.opacity = '1';
+            setTimeout(() => msg.style.opacity = '0', 2000);
         }
 
-        // Live Validation for length input
-        document.getElementById('custom-length').addEventListener('input', (e) => {
-            const val = parseInt(e.target.value);
-            const msg = document.getElementById('length-validation');
-            if (val < 4 || val > 128) {
-                msg.classList.add('visible');
-            } else {
-                msg.classList.remove('visible');
-            }
-        });
+        function resetOutput() {
+            document.getElementById('empty-state').classList.remove('hidden');
+            document.getElementById('output-screen').classList.add('hidden');
+        }
+
+        // Init
+        setType('password');
